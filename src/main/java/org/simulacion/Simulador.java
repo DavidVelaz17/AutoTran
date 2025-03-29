@@ -64,6 +64,41 @@ public class Simulador {
         void navegar();
     }
 
+
+    /**
+     * Interfaz funcional para vehículos con capacidad de operación electrica.
+     * <p>
+     * Define el contrato que deben implementar los vehículos que operan con electricidad.
+     * </p>
+     */
+    public interface Electrico {
+        /**
+         * Realiza las operaciones necesarias para que el vehículo utilice electricidad.
+         * <p>
+         * Implementa la capacidad de almacenar electricidad en bateria.
+         * </p>
+         */
+        void cargarBateria();
+    }
+
+    /**
+     * Interfaz funcional para vehículos con motor de combustión.
+     * <p>
+     * Define el contrato que deben implementar los vehículos que utilizan
+     * combustibles fósiles para su funcionamiento.
+     * </p>
+     */
+    public interface Combustion {
+        /**
+         * Realiza las operaciones de repostaje del vehículo.
+         * <p>
+         * Implementa la lógica específica para cargar combustible según
+         * las características del vehículo y el tipo de combustible que utiliza.
+         * </p>
+         */
+        void repostar();
+    }
+
     /**
      * Interfaz para vehículos con capacidad de operación autónoma.
      * <p>
@@ -116,6 +151,7 @@ public class Simulador {
         private final String id;
         private final double capacidad;
         private String ubicacion;
+        private Mision misionAsignada;
 
         /**
          * Constructor base para todos los vehículos del sistema.
@@ -136,6 +172,16 @@ public class Simulador {
             this.id = id;
             this.capacidad = capacidad;
             this.ubicacion = ubicacion;
+        }
+
+        public void asignarMision(Mision mision) {
+            this.misionAsignada = mision;
+            System.out.printf("Vehículo %s asignado a misión %s\n",
+                    this.id, mision.getId());
+        }
+
+        public Mision getMisionAsignada() {
+            return misionAsignada;
         }
 
         /**
@@ -224,7 +270,7 @@ public class Simulador {
          * para capacidad de operación independiente.
          * </p>
          */
-        public static class Auto extends Vehiculo implements Rodante, Autonomo {
+        public static class Auto extends Vehiculo implements Rodante, Combustion, Autonomo {
             private boolean autonomiaActivada;
 
             /**
@@ -286,6 +332,18 @@ public class Simulador {
             public void conducir() {
                 System.out.printf("Auto %s conduciendo %s\n",
                         getId(), autonomiaActivada ? "en modo autónomo" : "manualmente");
+            }
+
+            /**
+             * {@inheritDoc}
+             * <p>
+             * Implementación del repostaje que muestra el identificador del vehículo
+             * y el tipo de combustible utilizado.
+             * </p>
+             */
+            @Override
+            public void repostar() {
+                System.out.printf("Auto %s repostando combustible %s\n", getId());
             }
 
             /**
@@ -508,8 +566,9 @@ public class Simulador {
          * tanto terrestre como acuática.
          * </p>
          */
-        public static class Anfibio extends Vehiculo implements Rodante, Nadador {
+        public static class Anfibio extends Vehiculo implements Rodante, Nadador, Combustion {
             private boolean enAgua;
+            private boolean enTierra;
 
             /**
              * Constructor para crear un nuevo vehículo anfibio autónomo.
@@ -521,6 +580,7 @@ public class Simulador {
             public Anfibio(String id, double capacidad, String ubicacion) {
                 super(id, capacidad, ubicacion);
                 this.enAgua = false;
+                this.enTierra = true;
             }
 
             /**
@@ -570,6 +630,7 @@ public class Simulador {
             @Override
             public void conducir() {
                 enAgua = false;
+                enTierra = true;
                 System.out.printf("Anfibio %s conduciendo por carretera\n", getId());
             }
 
@@ -582,7 +643,20 @@ public class Simulador {
             @Override
             public void navegar() {
                 enAgua = true;
+                enTierra = false;
                 System.out.printf("Anfibio %s navegando en el agua\n", getId());
+            }
+
+            /**
+             * {@inheritDoc}
+             * <p>
+             * Implementación del repostaje que muestra el identificador del vehículo
+             * y el tipo de combustible utilizado.
+             * </p>
+             */
+            @Override
+            public void repostar() {
+                System.out.printf("Auto %s repostando combustible %s\n", getId());
             }
 
             /**
@@ -593,6 +667,7 @@ public class Simulador {
              */
             public void cambiarModo() {
                 enAgua = !enAgua;
+                enTierra = !enTierra;
                 System.out.printf("Anfibio %s ahora está %s\n",
                         getId(), enAgua ? "en el agua" : "en tierra");
             }
@@ -612,326 +687,328 @@ public class Simulador {
 
     }
 
-    /**
-     * Clase que representa una misión de transporte en el sistema.
-     * <p>
-     * Cada misión tiene un origen, destino, carga específica y puede estar
-     * asignada a un vehículo autónomo para su ejecución.
-     * </p>
-     */
-    public static class Mision {
-        private final String id;
-        private final String origen;
-        private final String destino;
-        private final double carga;
-        private Vehiculo vehiculoAsignado;
-        private boolean completada;
+        public static abstract class Mision {
+            protected final String id;
+            protected final String origen;
+            protected final String destino;
+            protected final double carga;
+            protected Vehiculo vehiculoAsignado;
+            protected boolean completada;
 
-        /**
-         * Constructor para crear una nueva misión de transporte.
-         *
-         * @param id Identificador único de la misión
-         * @param origen Punto de partida de la misión
-         * @param destino Punto de llegada de la misión
-         * @param carga Cantidad de carga a transportar (en kg)
-         */
-        public Mision(String id, String origen, String destino, double carga) {
-            this.id = id;
-            this.origen = origen;
-            this.destino = destino;
-            this.carga = carga;
-            this.completada = false;
-        }
-
-        /**
-         * Asigna un vehículo para ejecutar esta misión.
-         *
-         * @param vehiculo Vehículo autónomo que realizará la misión
-         */
-        public void asignarVehiculo(Vehiculo vehiculo) {
-            this.vehiculoAsignado = vehiculo;
-            System.out.printf("Vehículo %s asignado a la misión %s\n",
-                    vehiculo.getId(), id);
-        }
-
-        /**
-         * Inicia la ejecución de la misión.
-         * <p>
-         * Realiza la secuencia completa: carga, movimiento y descarga.
-         * </p>
-         * @throws IllegalStateException Si no hay vehículo asignado
-         */
-        public void iniciar() {
-            if (vehiculoAsignado == null) {
-                throw new IllegalStateException("No se puede iniciar la misión sin vehículo asignado");
+            /**
+             * Constructor base para todas las misiones.
+             */
+            public Mision(String id, String origen, String destino, double carga) {
+                this.id = id;
+                this.origen = origen;
+                this.destino = destino;
+                this.carga = carga;
+                this.completada = false;
             }
 
-            System.out.printf("Iniciando misión %s de %s a %s\n", id, origen, destino);
-            vehiculoAsignado.cargar(carga);
-            vehiculoAsignado.moverse(destino);
-            vehiculoAsignado.descargar(carga);
+            /**
+             * Método abstracto para iniciar la misión.
+             * Cada tipo de misión implementa su propio comportamiento.
+             */
+            public abstract void iniciar();
+
+            /**
+             * Método abstracto para completar la misión.
+             * Cada tipo de misión implementa su propio comportamiento.
+             */
+            public abstract void completar();
+
+            /**
+             * Asigna un vehículo a esta misión.
+             * <p>
+             * Notifica al vehículo sobre su asignación.
+             * </p>
+             */
+            public void asignarVehiculo(Vehiculo vehiculo) {
+                this.vehiculoAsignado = vehiculo;
+                vehiculo.asignarMision(this);
+                System.out.printf("Vehículo %s asignado a la misión %s\n",
+                        vehiculo.getId(), id);
+            }
+
+            // Getters (mantenidos del código original)
+            public String getId() { return id; }
+            public String getOrigen() { return origen; }
+            public String getDestino() { return destino; }
+            public double getCarga() { return carga; }
+            public Vehiculo getVehiculoAsignado() { return vehiculoAsignado; }
+            public boolean isCompletada() { return completada; }
+
+            /**
+             * Obtiene un resumen del estado actual de la misión.
+             * <p>
+             * Mantiene el formato detallado del código original.
+             * </p>
+             */
+            public String getEstado() {
+                return String.format("Misión ID: %s, Origen: %s, Destino: %s, Carga: %.2f kg, Estado: %s",
+                        id, origen, destino, carga,
+                        completada ? "Completada" : "Pendiente");
+            }
         }
 
         /**
-         * Marca la misión como completada.
-         */
-        public void completar() {
-            this.completada = true;
-            System.out.printf("Misión %s completada\n", id);
-        }
-
-        /**
-         * Verifica si la misión ha sido completada.
-         *
-         * @return true si la misión está completada, false en caso contrario
-         */
-        public boolean isCompletada() {
-            return completada;
-        }
-
-        /**
-         * Obtiene un resumen del estado actual de la misión.
-         *
-         * @return Cadena con los detalles de la misión y su estado
-         */
-        public String getEstado() {
-            return String.format("Misión ID: %s, Origen: %s, Destino: %s, Carga: %.2f kg, Estado: %s",
-                    id, origen, destino, carga,
-                    completada ? "Completada" : "Pendiente");
-        }
-
-        /**
-         * Obtiene el identificador único de la misión.
-         *
-         * @return ID de la misión
-         */
-        public String getId() {
-            return id;
-        }
-
-        /**
-         * Obtiene el punto de origen de la misión.
-         *
-         * @return Ubicación de origen
-         */
-        public String getOrigen() {
-            return origen;
-        }
-
-        /**
-         * Obtiene el punto de destino de la misión.
-         *
-         * @return Ubicación de destino
-         */
-        public String getDestino() {
-            return destino;
-        }
-
-        /**
-         * Obtiene la cantidad de carga a transportar.
-         *
-         * @return Peso de la carga en kg
-         */
-        public double getCarga() {
-            return carga;
-        }
-
-        /**
-         * Obtiene el vehículo asignado a la misión.
-         *
-         * @return Vehículo asignado o null si no hay ninguno
-         */
-        public Vehiculo getVehiculoAsignado() {
-            return vehiculoAsignado;
-        }
-    }
-
-    /**
-     * Clase que representa el entorno de simulación del sistema de transporte.
-     * <p>
-     * Gestiona todos los vehículos y misiones, coordinando su interacción
-     * mediante ciclos de simulación.
-     * </p>
-     */
-    public static class Entorno {
-        private final List<Vehiculo> vehiculos;
-        private final List<Mision> misiones;
-
-        /**
-         * Constructor que inicializa el entorno de simulación.
-         */
-        public Entorno() {
-            this.vehiculos = new ArrayList<>();
-            this.misiones = new ArrayList<>();
-        }
-
-        /**
-         * Agrega un vehículo al entorno de simulación.
-         *
-         * @param vehiculo Vehículo autónomo a agregar
-         */
-        public void agregarVehiculo(Vehiculo vehiculo) {
-            vehiculos.add(vehiculo);
-            System.out.printf("Vehículo %s agregado al entorno\n", vehiculo.getId());
-        }
-
-        /**
-         * Agrega una misión al entorno de simulación.
-         *
-         * @param mision Misión a agregar
-         */
-        public void agregarMision(Mision mision) {
-            misiones.add(mision);
-            System.out.printf("Misión %s agregada al entorno\n", mision.getId());
-        }
-
-        /**
-         * Ejecuta un ciclo completo de simulación.
+         * Misión de entrega urgente con comportamiento específico.
          * <p>
-         * Realiza las siguientes operaciones en orden:
-         * 1. Asigna vehículos disponibles a misiones pendientes
-         * 2. Ejecuta las misiones asignadas
-         * 3. Muestra el estado actual de todos los elementos del sistema
+         * Optimizada para entregas rápidas con menos pasos.
          * </p>
          */
-        public void simularCiclo() {
-            System.out.println("\n=== Iniciando ciclo de simulación ===");
+        public static class EntregaUrgente extends Mision {
+            public EntregaUrgente(String id, String origen, String destino, double carga) {
+                super(id, origen, destino, carga);
+            }
 
-            // Asignar vehículos a misiones no asignadas
-            for (Mision mision : misiones) {
-                if (mision.getVehiculoAsignado() == null && !mision.isCompletada()) {
-                    asignarVehiculoAMision(mision);
+            @Override
+            public void iniciar() {
+                System.out.printf("\n=== Iniciando entrega urgente %s de %s a %s ===\n",
+                        id, origen, destino);
+
+                if (vehiculoAsignado == null) {
+                    throw new IllegalStateException("No se puede iniciar la misión sin vehículo asignado");
+                }
+
+                vehiculoAsignado.moverse(destino);
+            }
+
+            @Override
+            public void completar() {
+                System.out.printf("=== Entrega urgente %s completada ===\n", id);
+                completada = true;
+
+                if (vehiculoAsignado != null) {
+                    vehiculoAsignado.descargar(carga);
+                }
+            }
+        }
+
+        /**
+         * Misión de rescate con comportamiento especializado.
+         * <p>
+         * Incluye activación de autonomía y lógica específica para rescates.
+         * </p>
+         */
+        public static class MisionDeRescate extends Mision {
+            public MisionDeRescate(String id, String origen, String destino, double carga) {
+                super(id, origen, destino, carga);
+            }
+
+            @Override
+            public void iniciar() {
+                System.out.printf("\n=== Iniciando misión de rescate %s en %s ===\n",
+                        id, destino);
+
+                if (vehiculoAsignado == null) {
+                    throw new IllegalStateException("No se puede iniciar la misión sin vehículo asignado");
+                }
+
+                vehiculoAsignado.moverse(destino);
+
+                // Comportamiento específico para rescate
+                if (vehiculoAsignado instanceof Autonomo) {
+                    ((Autonomo) vehiculoAsignado).activarAutonomia();
                 }
             }
 
-            // Ejecutar misiones
-            for (Mision mision : misiones) {
-                if (!mision.isCompletada() && mision.getVehiculoAsignado() != null) {
-                    mision.iniciar();
-                    mision.completar();
+            @Override
+            public void completar() {
+                System.out.printf("=== Misión de rescate %s completada ===\n", id);
+                completada = true;
+
+                if (vehiculoAsignado != null) {
+                    vehiculoAsignado.cargar(carga); // Rescatando personas/carga
+
+                    if (vehiculoAsignado instanceof Autonomo) {
+                        ((Autonomo) vehiculoAsignado).desactivarAutonomia();
+                    }
                 }
             }
-
-            // Mostrar estados
-            System.out.println("\n--- Estado de vehículos ---");
-            for (Vehiculo vehiculo : vehiculos) {
-                System.out.println(vehiculo.obtenerEstado());
-            }
-
-            System.out.println("\n--- Estado de misiones ---");
-            for (Mision mision : misiones) {
-                System.out.println(mision.getEstado());
-            }
-
-            System.out.println("=== Ciclo de simulación completado ===\n");
         }
 
         /**
-         * Asigna un vehículo disponible a una misión específica.
-         *
-         * @param mision Misión a la que se asignará el vehículo
+         * Entorno de simulación mejorado.
+         * <p>
+         * Combina la gestión detallada del código original con la
+         * lógica de simulación por pasos del segundo código.
+         * </p>
          */
-        private void asignarVehiculoAMision(Mision mision) {
-            for (Vehiculo vehiculo : vehiculos) {
-                // Verificar si el vehículo está disponible
-                boolean disponible = true;
-                for (Mision m : misiones) {
-                    if (vehiculo.equals(m.getVehiculoAsignado()) && !m.isCompletada()) {
-                        disponible = false;
-                        break;
+        public static class Entorno {
+            private final List<Vehiculo> vehiculos;
+            private final List<Mision> misiones;
+
+            public Entorno() {
+                this.vehiculos = new ArrayList<>();
+                this.misiones = new ArrayList<>();
+            }
+
+            public void agregarVehiculo(Vehiculo vehiculo) {
+                vehiculos.add(vehiculo);
+                System.out.printf("Vehículo %s agregado al entorno\n", vehiculo.getId());
+            }
+
+            public void agregarMision(Mision mision) {
+                misiones.add(mision);
+                System.out.printf("Misión %s (%s) agregada al entorno\n",
+                        mision.getId(), mision.getClass().getSimpleName());
+            }
+
+            /**
+             * Ciclo de simulación mejorado.
+             * <p>
+             * Mantiene el formato detallado del código original pero con
+             * la lógica de ejecución por pasos del segundo código.
+             * </p>
+             */
+            public void simularCiclo() {
+                System.out.println("\n=== Iniciando ciclo de simulación ===");
+
+                // Asignar vehículos a misiones no asignadas
+                for (Mision mision : misiones) {
+                    if (mision.getVehiculoAsignado() == null && !mision.isCompletada()) {
+                        asignarVehiculoAMision(mision);
                     }
                 }
 
-                if (disponible) {
-                    mision.asignarVehiculo(vehiculo);
-                    return;
+                // Ejecutar misiones en pasos
+                for (Mision mision : misiones) {
+                    if (!mision.isCompletada() && mision.getVehiculoAsignado() != null) {
+                        Vehiculo vehiculo = mision.getVehiculoAsignado();
+
+                        if (vehiculo.getUbicacion().equals(mision.getOrigen())) {
+                            mision.iniciar();
+                        } else if (vehiculo.getUbicacion().equals(mision.getDestino())) {
+                            mision.completar();
+                        } else {
+                            System.out.printf("Vehículo %s en ruta hacia %s para misión %s\n",
+                                    vehiculo.getId(), mision.getDestino(), mision.getId());
+                        }
+                    }
                 }
+
+                // Mostrar estados
+                System.out.println("\n--- Estado de vehículos ---");
+                for (Vehiculo vehiculo : vehiculos) {
+                    System.out.println(vehiculo.obtenerEstado());
+                }
+
+                System.out.println("\n--- Estado de misiones ---");
+                for (Mision mision : misiones) {
+                    System.out.println(mision.getEstado());
+                }
+
+                System.out.println("=== Ciclo de simulación completado ===\n");
             }
-            System.out.printf("No hay vehículos disponibles para la misión %s\n", mision.getId());
+
+            /**
+             * Asigna vehículos a misiones considerando ubicación.
+             * <p>
+             * Mejorado para verificar la ubicación del vehículo.
+             * </p>
+             */
+            private void asignarVehiculoAMision(Mision mision) {
+                for (Vehiculo vehiculo : vehiculos) {
+                    // Verificar si el vehículo está disponible y en el origen
+                    boolean disponible = vehiculo.getUbicacion().equals(mision.getOrigen());
+
+                    for (Mision m : misiones) {
+                        if (vehiculo.equals(m.getVehiculoAsignado()) && !m.isCompletada()) {
+                            disponible = false;
+                            break;
+                        }
+                    }
+
+                    if (disponible) {
+                        mision.asignarVehiculo(vehiculo);
+                        return;
+                    }
+                }
+                System.out.printf("No hay vehículos disponibles en %s para la misión %s\n",
+                        mision.getOrigen(), mision.getId());
+            }
+
+            /**
+             * Demostración de polimorfismo mejorada.
+             * <p>
+             * Mantiene el estilo detallado del código original.
+             * </p>
+             */
+            public void demostrarPolimorfismo() {
+                System.out.println("\n=== Demostración de polimorfismo ===");
+
+                for (Vehiculo vehiculo : vehiculos) {
+                    System.out.println("\nProcesando vehículo: " + vehiculo.getId());
+
+                    // Llamada polimórfica a método de clase base
+                    System.out.print("Movimiento: ");
+                    vehiculo.moverse("destino genérico");
+
+                    // Verificación de interfaces implementadas
+                    if (vehiculo instanceof Rodante) {
+                        ((Rodante) vehiculo).conducir();
+                    }
+
+                    if (vehiculo instanceof Volador) {
+                        ((Volador) vehiculo).volar();
+                    }
+
+                    if (vehiculo instanceof Nadador) {
+                        ((Nadador) vehiculo).navegar();
+                    }
+
+                    if (vehiculo instanceof Autonomo) {
+                        ((Autonomo) vehiculo).activarAutonomia();
+                    }
+
+                    System.out.println("Estado actual: " + vehiculo.obtenerEstado());
+                }
+
+                System.out.println("=== Fin de demostración de polimorfismo ===\n");
+            }
         }
 
         /**
-         * Demuestra el polimorfismo del sistema.
+         * Método principal mejorado.
          * <p>
-         * Muestra cómo los vehículos responden a los mismos métodos de diferentes formas
-         * según su tipo concreto y las interfaces que implementan.
+         * Crea un entorno con diferentes tipos de misiones y vehículos,
+         * demostrando las nuevas capacidades.
          * </p>
          */
-        public void demostrarPolimorfismo() {
-            System.out.println("\n=== Demostración de polimorfismo ===");
+        public static void main(String[] args) {
+            // Crear entorno de simulación
+            Entorno entorno = new Entorno();
 
-            for (Vehiculo vehiculo : vehiculos) {
-                System.out.println("\nProcesando vehículo: " + vehiculo.getId());
+            // Crear y agregar vehículos
+            Vehiculo.Auto auto1 = new Vehiculo.Auto("AUTO-001", 500, "Base Central");
+            Vehiculo.Dron dron1 = new Vehiculo.Dron("DRON-001", 10, "Hangar Norte");
+            Vehiculo.Submarino submarino1 = new Vehiculo.Submarino("SUB-001", 2000, "Puerto Este");
+            Vehiculo.Anfibio anfibio1 = new Vehiculo.Anfibio("ANF-001", 800, "Base Mixta");
 
-                // Llamada polimórfica a método de clase base
-                System.out.print("Movimiento: ");
-                vehiculo.moverse("destino genérico");
+            entorno.agregarVehiculo(auto1);
+            entorno.agregarVehiculo(dron1);
+            entorno.agregarVehiculo(submarino1);
+            entorno.agregarVehiculo(anfibio1);
 
-                // Verificación de interfaces implementadas
-                if (vehiculo instanceof Rodante) {
-                    ((Rodante) vehiculo).conducir();
-                }
+            // Crear diferentes tipos de misiones
+            Mision entregaUrgente = new EntregaUrgente("M001", "Base Central", "Centro de Distribución", 300);
+            Mision rescateAereo = new MisionDeRescate("M002", "Hangar Norte", "Zona de Desastre", 0);
+            Mision entregaMaritima = new EntregaUrgente("M003", "Puerto Este", "Isla Remota", 1500);
+            Mision rescateCostero = new MisionDeRescate("M004", "Base Mixta", "Playa Accidentada", 5);
 
-                if (vehiculo instanceof Volador) {
-                    ((Volador) vehiculo).volar();
-                }
+            entorno.agregarMision(entregaUrgente);
+            entorno.agregarMision(rescateAereo);
+            entorno.agregarMision(entregaMaritima);
+            entorno.agregarMision(rescateCostero);
 
-                if (vehiculo instanceof Nadador) {
-                    ((Nadador) vehiculo).navegar();
-                }
+            // Demostrar polimorfismo
+            entorno.demostrarPolimorfismo();
 
-                if (vehiculo instanceof Autonomo) {
-                    ((Autonomo) vehiculo).activarAutonomia();
-                }
-
-                System.out.println("Estado actual: " + vehiculo.obtenerEstado());
+            // Ejecutar ciclos de simulación
+            for (int i = 0; i < 2; i++) {
+                entorno.simularCiclo();
             }
-
-            System.out.println("=== Fin de demostración de polimorfismo ===\n");
         }
     }
-
-    /**
-     * Método principal para ejecutar la simulación del sistema.
-     * <p>
-     * Crea un entorno de simulación, añade vehículos y misiones, y ejecuta
-     * ciclos de simulación demostrando el funcionamiento del sistema.
-     * </p>
-     *
-     * @param args Argumentos de línea de comandos (no utilizados)
-     */
-    public static void main(String[] args) {
-        // Crear entorno de simulación
-        Entorno entorno = new Entorno();
-
-        // Crear y agregar vehículos
-        Vehiculo.Auto auto1 = new Vehiculo.Auto("AUTO-001", 500, "Base Central");
-        Vehiculo.Dron dron1 = new Vehiculo.Dron("DRON-001", 10, "Hangar Norte");
-        Vehiculo.Submarino submarino1 = new Vehiculo.Submarino("SUB-001", 2000, "Puerto Este");
-        Vehiculo.Anfibio anfibio1 = new Vehiculo.Anfibio("ANF-001", 800, "Base Mixta");
-
-        entorno.agregarVehiculo(auto1);
-        entorno.agregarVehiculo(dron1);
-        entorno.agregarVehiculo(submarino1);
-        entorno.agregarVehiculo(anfibio1);
-
-        // Crear y agregar misiones
-        Mision mision1 = new Mision("M001", "Base Central", "Centro de Distribución", 300);
-        Mision mision2 = new Mision("M002", "Hangar Norte", "Isla Remota", 5);
-        Mision mision3 = new Mision("M003", "Puerto Este", "Arrecife Coral", 1500);
-        Mision mision4 = new Mision("M004", "Base Mixta", "Isla Costera", 600);
-
-        entorno.agregarMision(mision1);
-        entorno.agregarMision(mision2);
-        entorno.agregarMision(mision3);
-        entorno.agregarMision(mision4);
-
-        // Demostrar polimorfismo
-        entorno.demostrarPolimorfismo();
-
-        // Ejecutar ciclos de simulación
-        for (int i = 0; i < 2; i++) {
-            entorno.simularCiclo();
-        }
-    }
-}

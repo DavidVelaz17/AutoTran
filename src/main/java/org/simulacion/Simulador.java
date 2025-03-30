@@ -64,41 +64,6 @@ public class Simulador {
         void navegar();
     }
 
-
-    /**
-     * Interfaz funcional para vehículos con capacidad de operación electrica.
-     * <p>
-     * Define el contrato que deben implementar los vehículos que operan con electricidad.
-     * </p>
-     */
-    public interface Electrico {
-        /**
-         * Realiza las operaciones necesarias para que el vehículo utilice electricidad.
-         * <p>
-         * Implementa la capacidad de almacenar electricidad en bateria.
-         * </p>
-         */
-        void cargarBateria();
-    }
-
-    /**
-     * Interfaz funcional para vehículos con motor de combustión.
-     * <p>
-     * Define el contrato que deben implementar los vehículos que utilizan
-     * combustibles fósiles para su funcionamiento.
-     * </p>
-     */
-    public interface Combustion {
-        /**
-         * Realiza las operaciones de repostaje del vehículo.
-         * <p>
-         * Implementa la lógica específica para cargar combustible según
-         * las características del vehículo y el tipo de combustible que utiliza.
-         * </p>
-         */
-        void repostar();
-    }
-
     /**
      * Interfaz para vehículos con capacidad de operación autónoma.
      * <p>
@@ -151,7 +116,6 @@ public class Simulador {
         private final String id;
         private final double capacidad;
         private String ubicacion;
-        private Mision misionAsignada;
 
         /**
          * Constructor base para todos los vehículos del sistema.
@@ -159,7 +123,6 @@ public class Simulador {
          * @param id Identificador único alfanumérico del vehículo
          * @param capacidad Capacidad máxima de carga en kilogramos (valor positivo)
          * @param ubicacion Ubicación inicial del vehículo (nombre descriptivo)
-         * @throws IllegalArgumentException Si la capacidad es negativa o el id es nulo/vacío
          */
         public Vehiculo(String id, double capacidad, String ubicacion) {
             if (id == null || id.trim().isEmpty()) {
@@ -174,15 +137,6 @@ public class Simulador {
             this.ubicacion = ubicacion;
         }
 
-        public void asignarMision(Mision mision) {
-            this.misionAsignada = mision;
-            System.out.printf("Vehículo %s asignado a misión %s\n",
-                    this.id, mision.getId());
-        }
-
-        public Mision getMisionAsignada() {
-            return misionAsignada;
-        }
 
         /**
          * Mueve el vehículo a la ubicación destino especificada.
@@ -199,7 +153,6 @@ public class Simulador {
          * Carga una cantidad específica de material en el vehículo.
          *
          * @param cantidad Peso en kilogramos del material a cargar (debe ser positiva)
-         * @throws IllegalArgumentException Si la cantidad es negativa o excede la capacidad
          */
         public abstract void cargar(double cantidad);
 
@@ -207,7 +160,6 @@ public class Simulador {
          * Descarga una cantidad específica de material del vehículo.
          *
          * @param cantidad Peso en kilogramos del material a descargar (debe ser positiva)
-         * @throws IllegalArgumentException Si la cantidad es negativa
          */
         public abstract void descargar(double cantidad);
 
@@ -270,7 +222,7 @@ public class Simulador {
          * para capacidad de operación independiente.
          * </p>
          */
-        public static class Auto extends Vehiculo implements Rodante, Combustion, Autonomo {
+        public static class Auto extends Vehiculo implements Rodante, Autonomo {
             private boolean autonomiaActivada;
 
             /**
@@ -304,7 +256,6 @@ public class Simulador {
              * <p>
              * Implementación de carga para automóvil, con validación de capacidad.
              * </p>
-             * @throws IllegalArgumentException Si la cantidad excede la capacidad del vehículo
              */
             @Override
             public void cargar(double cantidad) {
@@ -332,18 +283,6 @@ public class Simulador {
             public void conducir() {
                 System.out.printf("Auto %s conduciendo %s\n",
                         getId(), autonomiaActivada ? "en modo autónomo" : "manualmente");
-            }
-
-            /**
-             * {@inheritDoc}
-             * <p>
-             * Implementación del repostaje que muestra el identificador del vehículo
-             * y el tipo de combustible utilizado.
-             * </p>
-             */
-            @Override
-            public void repostar() {
-                System.out.printf("Auto %s repostando combustible %s\n", getId());
             }
 
             /**
@@ -415,7 +354,6 @@ public class Simulador {
 
             /**
              * {@inheritDoc}
-             * @throws IllegalArgumentException Si la cantidad excede la capacidad del vehículo
              */
             @Override
             public void cargar(double cantidad) {
@@ -516,7 +454,6 @@ public class Simulador {
 
             /**
              * {@inheritDoc}
-             * @throws IllegalArgumentException Si la cantidad excede la capacidad del vehículo
              */
             @Override
             public void cargar(double cantidad) {
@@ -566,7 +503,7 @@ public class Simulador {
          * tanto terrestre como acuática.
          * </p>
          */
-        public static class Anfibio extends Vehiculo implements Rodante, Nadador, Combustion {
+        public static class Anfibio extends Vehiculo implements Rodante, Nadador {
             private boolean enAgua;
             private boolean enTierra;
 
@@ -603,7 +540,6 @@ public class Simulador {
 
             /**
              * {@inheritDoc}
-             * @throws IllegalArgumentException Si la cantidad excede la capacidad del vehículo
              */
             @Override
             public void cargar(double cantidad) {
@@ -648,18 +584,6 @@ public class Simulador {
             }
 
             /**
-             * {@inheritDoc}
-             * <p>
-             * Implementación del repostaje que muestra el identificador del vehículo
-             * y el tipo de combustible utilizado.
-             * </p>
-             */
-            @Override
-            public void repostar() {
-                System.out.printf("Auto %s repostando combustible %s\n", getId());
-            }
-
-            /**
              * Cambia el modo de operación del vehículo entre terrestre y acuático.
              * <p>
              * Alterna el estado interno del vehículo entre modos de operación.
@@ -687,6 +611,12 @@ public class Simulador {
 
     }
 
+    /**
+     * Clase abstracta que representa una misión genérica en el sistema de transporte.
+     * <p>
+     * Define los atributos y comportamientos básicos que todas las misiones deben implementar.
+     * </p>
+     */
         public static abstract class Mision {
             protected final String id;
             protected final String origen;
@@ -726,17 +656,38 @@ public class Simulador {
              */
             public void asignarVehiculo(Vehiculo vehiculo) {
                 this.vehiculoAsignado = vehiculo;
-                vehiculo.asignarMision(this);
                 System.out.printf("Vehículo %s asignado a la misión %s\n",
                         vehiculo.getId(), id);
             }
-
-            // Getters (mantenidos del código original)
+            /**
+             * Obtiene el identificador único de la misión.
+             * @return Cadena con el ID de la misión
+             */
             public String getId() { return id; }
+            /**
+             * Obtiene el punto de origen de la misión.
+             * @return Ubicación de inicio de la misión
+             */
             public String getOrigen() { return origen; }
+            /**
+             * Obtiene el destino de la misión.
+             * @return Ubicación objetivo donde debe completarse la misión
+             */
             public String getDestino() { return destino; }
+            /**
+             * Obtiene el peso de la carga asociada a esta misión.
+             * @return Cantidad de carga en kilogramos
+             */
             public double getCarga() { return carga; }
+            /**
+             * Obtiene el vehículo asignado actualmente a esta misión.
+             * @return El objeto Vehiculo asignado, o null si no hay vehículo asignado
+             */
             public Vehiculo getVehiculoAsignado() { return vehiculoAsignado; }
+            /**
+             * Verifica si la misión ha sido completada.
+             * @return true si la misión está marcada como completada, false en caso contrario
+             */
             public boolean isCompletada() { return completada; }
 
             /**
@@ -753,12 +704,20 @@ public class Simulador {
         }
 
         /**
-         * Misión de entrega urgente con comportamiento específico.
+         * Clase concreta que representa una misión de entrega urgente.
          * <p>
-         * Optimizada para entregas rápidas con menos pasos.
+         * Implementa un comportamiento optimizado para entregas rápidas con menos pasos.
          * </p>
          */
         public static class EntregaUrgente extends Mision {
+            /**
+             * Constructor para crear una nueva misión de entrega urgente.
+             *
+             * @param id Identificador único de la misión
+             * @param origen Ubicación de origen de la misión
+             * @param destino Ubicación de destino de la misión
+             * @param carga Cantidad de carga a transportar (en kg)
+             */
             public EntregaUrgente(String id, String origen, String destino, double carga) {
                 super(id, origen, destino, carga);
             }
@@ -786,13 +745,22 @@ public class Simulador {
             }
         }
 
-        /**
-         * Misión de rescate con comportamiento especializado.
-         * <p>
-         * Incluye activación de autonomía y lógica específica para rescates.
-         * </p>
-         */
+    /**
+     * Clase concreta que representa una misión de rescate.
+     * <p>
+     * Implementa comportamientos específicos para operaciones de rescate,
+     * incluyendo activación de autonomía en los vehículos.
+     * </p>
+     */
         public static class MisionDeRescate extends Mision {
+        /**
+         * Constructor para crear una nueva misión de rescate.
+         *
+         * @param id Identificador único de la misión
+         * @param origen Ubicación de origen de la misión
+         * @param destino Ubicación donde se realizará el rescate
+         * @param carga Cantidad de personas/carga a rescatar (en kg)
+         */
             public MisionDeRescate(String id, String origen, String destino, double carga) {
                 super(id, origen, destino, carga);
             }
@@ -829,27 +797,42 @@ public class Simulador {
             }
         }
 
-        /**
-         * Entorno de simulación mejorado.
-         * <p>
-         * Combina la gestión detallada del código original con la
-         * lógica de simulación por pasos del segundo código.
-         * </p>
-         */
+    /**
+     * Clase que representa el entorno de simulación.
+     * <p>
+     * Gestiona los vehículos y misiones, y coordina la ejecución de los ciclos de simulación.
+     * </p>
+     */
         public static class Entorno {
             private final List<Vehiculo> vehiculos;
             private final List<Mision> misiones;
 
+            /**
+             * Constructor del entorno de simulación.
+             * <p>
+             * Inicializa las listas de vehículos y misiones.
+             * </p>
+             */
             public Entorno() {
                 this.vehiculos = new ArrayList<>();
                 this.misiones = new ArrayList<>();
             }
 
+        /**
+         * Agrega un vehículo al entorno de simulación.
+         *
+         * @param vehiculo Vehículo a agregar al entorno
+         */
             public void agregarVehiculo(Vehiculo vehiculo) {
                 vehiculos.add(vehiculo);
                 System.out.printf("Vehículo %s agregado al entorno\n", vehiculo.getId());
             }
 
+        /**
+         * Agrega una misión al entorno de simulación.
+         *
+         * @param mision Misión a agregar al entorno
+         */
             public void agregarMision(Mision mision) {
                 misiones.add(mision);
                 System.out.printf("Misión %s (%s) agregada al entorno\n",
@@ -866,14 +849,12 @@ public class Simulador {
             public void simularCiclo() {
                 System.out.println("\n=== Iniciando ciclo de simulación ===");
 
-                // Asignar vehículos a misiones no asignadas
                 for (Mision mision : misiones) {
-                    if (mision.getVehiculoAsignado() == null && !mision.isCompletada()) {
+                    if (mision.getVehiculoAsignado() == null && mision.isCompletada()) {
                         asignarVehiculoAMision(mision);
                     }
                 }
 
-                // Ejecutar misiones en pasos
                 for (Mision mision : misiones) {
                     if (!mision.isCompletada() && mision.getVehiculoAsignado() != null) {
                         Vehiculo vehiculo = mision.getVehiculoAsignado();
@@ -889,7 +870,6 @@ public class Simulador {
                     }
                 }
 
-                // Mostrar estados
                 System.out.println("\n--- Estado de vehículos ---");
                 for (Vehiculo vehiculo : vehiculos) {
                     System.out.println(vehiculo.obtenerEstado());
@@ -942,11 +922,9 @@ public class Simulador {
                 for (Vehiculo vehiculo : vehiculos) {
                     System.out.println("\nProcesando vehículo: " + vehiculo.getId());
 
-                    // Llamada polimórfica a método de clase base
                     System.out.print("Movimiento: ");
                     vehiculo.moverse("destino genérico");
 
-                    // Verificación de interfaces implementadas
                     if (vehiculo instanceof Rodante) {
                         ((Rodante) vehiculo).conducir();
                     }
@@ -978,10 +956,8 @@ public class Simulador {
          * </p>
          */
         public static void main(String[] args) {
-            // Crear entorno de simulación
             Entorno entorno = new Entorno();
 
-            // Crear y agregar vehículos
             Vehiculo.Auto auto1 = new Vehiculo.Auto("AUTO-001", 500, "Base Central");
             Vehiculo.Dron dron1 = new Vehiculo.Dron("DRON-001", 10, "Hangar Norte");
             Vehiculo.Submarino submarino1 = new Vehiculo.Submarino("SUB-001", 2000, "Puerto Este");
@@ -992,7 +968,6 @@ public class Simulador {
             entorno.agregarVehiculo(submarino1);
             entorno.agregarVehiculo(anfibio1);
 
-            // Crear diferentes tipos de misiones
             Mision entregaUrgente = new EntregaUrgente("M001", "Base Central", "Centro de Distribución", 300);
             Mision rescateAereo = new MisionDeRescate("M002", "Hangar Norte", "Zona de Desastre", 0);
             Mision entregaMaritima = new EntregaUrgente("M003", "Puerto Este", "Isla Remota", 1500);
@@ -1003,10 +978,8 @@ public class Simulador {
             entorno.agregarMision(entregaMaritima);
             entorno.agregarMision(rescateCostero);
 
-            // Demostrar polimorfismo
             entorno.demostrarPolimorfismo();
 
-            // Ejecutar ciclos de simulación
             for (int i = 0; i < 2; i++) {
                 entorno.simularCiclo();
             }

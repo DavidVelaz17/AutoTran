@@ -85,13 +85,10 @@ public class Simulador {
             if (capacidad <= 0) {
                 throw new IllegalArgumentException("La capacidad debe ser un valor positivo");
             }
-
             this.id = id;
             this.capacidad = capacidad;
             this.ubicacion = ubicacion;
         }
-
-
         /**
          * Mueve el vehículo a la ubicación destino especificada.
          */
